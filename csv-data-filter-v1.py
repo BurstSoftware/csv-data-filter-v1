@@ -9,15 +9,21 @@ st.write("Upload a .csv file to get started.")
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
 if uploaded_file is not None:
-    # To read file as bytes:
-    bytes_data = uploaded_file.getvalue()
-    # To convert to a string based IO:
-    stringio = StringIO(uploaded_data.decode('utf-8'))
-    # To read file as string:
-    string_data = stringio.read()
-
-    # Read the CSV into a pandas DataFrame
-    df = pd.read_csv(StringIO(string_data))
+    # Use uploaded_file directly for pandas to ensure consistency
+    # pandas can often read directly from the file_uploader object or its string representation
+    
+    try:
+        # Attempt to decode as UTF-8 first, common for CSVs
+        stringio = StringIO(uploaded_file.getvalue().decode('utf-8'))
+        df = pd.read_csv(stringio)
+    except UnicodeDecodeError:
+        # If UTF-8 fails, try latin1 or another common encoding
+        stringio = StringIO(uploaded_file.getvalue().decode('latin1'))
+        df = pd.read_csv(stringio)
+    except Exception as e:
+        st.error(f"Error reading CSV file: {e}")
+        st.info("Please ensure your CSV is properly formatted and encoded (UTF-8 is recommended).")
+        st.stop() # Stop execution if file reading fails
 
     st.subheader("Original Data - First 10 Rows")
     st.dataframe(df.head(10))
